@@ -3,8 +3,9 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
-    public float moveSpeed = 1.6f;
-    public float jumpForce = 5f;
+    public float walkSpeed = 1.6f;
+    public float runSpeed = 3.5f;
+    private float moveSpeed = 0f;
 
     [Header("Ground Check")]
     private Transform _groundCheck;
@@ -13,6 +14,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Jump")]
     public int maxJumpCount = 2;
+    public float jumpForce = 5f;
 
     public Animator _animator;
 
@@ -36,10 +38,12 @@ public class PlayerController : MonoBehaviour
         if (gc != null) _groundCheck = gc;
 
         _animator = GetComponent<Animator>();
+
     }
 
     private void Update()
     {
+        print(moveSpeed);
         ReadInput();
         HandleState();
         CheckGround();
@@ -58,6 +62,12 @@ public class PlayerController : MonoBehaviour
         float z = Input.GetAxis("Vertical");
 
         _moveInput = new Vector3(x, 0, z);
+
+        // Hız belirleme
+        if (_moveInput.magnitude > 0.1f)
+            moveSpeed = Input.GetKey(KeyCode.LeftShift) ? runSpeed : walkSpeed;
+        else
+            moveSpeed = 0f;
     }
 
     //Player state değiştirme
@@ -73,9 +83,9 @@ public class PlayerController : MonoBehaviour
         {
             case PlayerState.Idle:
             case PlayerState.Walk:
+            case PlayerState.Run:
                 HandleRotation();
                 HandleJump();
-                UpdateMovementState();
                 break;
 
             case PlayerState.Jump:
@@ -84,14 +94,6 @@ public class PlayerController : MonoBehaviour
                 break;
 
         }
-    }
-
-
-    // Hareket durumuna göre state belirle
-    void UpdateMovementState()
-    {
-        bool isMoving = _moveInput.magnitude > 0.1f;
-        ChangeState(isMoving ? PlayerState.Walk : PlayerState.Idle);
     }
 
     //Player hareketlerini kontrol etme
@@ -110,7 +112,15 @@ public class PlayerController : MonoBehaviour
     //Player hareketlerini uygulama
     void ApplyMovement()
     {
-        _rb.linearVelocity = new Vector3(_moveInput.x * moveSpeed, _rb.linearVelocity.y, _moveInput.z * moveSpeed);
+        if (_moveInput.magnitude > 0.1f)
+        {
+            Vector3 velocity = _moveInput.normalized * moveSpeed;
+            _rb.linearVelocity = new Vector3(velocity.x, _rb.linearVelocity.y, velocity.z);
+        }
+        else
+        {
+            _rb.linearVelocity = new Vector3(0, _rb.linearVelocity.y, 0);
+        }
     }
 
     //Player zıplama kontrolü
@@ -148,7 +158,13 @@ public class PlayerController : MonoBehaviour
     void UpdateAnimator()
     {
         _animator.SetBool(HashIsJumping, !isGrounded);
-        _animator.SetFloat(HashSpeed, _moveInput.magnitude, 0.1f, Time.deltaTime);
+        // Animasyon speed doğrudan moveSpeed üzerinden
+        float animSpeed = 0f;
+        if (moveSpeed == walkSpeed) animSpeed = 0.5f;
+        else if (moveSpeed == runSpeed) animSpeed = 1f;
+        else animSpeed = 0f;
+
+        _animator.SetFloat(HashSpeed, animSpeed, 0.1f, Time.deltaTime);
     }
 
 }
