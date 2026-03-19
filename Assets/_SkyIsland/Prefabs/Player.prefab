@@ -657,7 +657,7 @@ GameObject:
   - component: {fileID: 1722580378922067537}
   - component: {fileID: 4642653694434859695}
   - component: {fileID: 5049248690995374547}
-  - component: {fileID: -6017209438779392919}
+  - component: {fileID: 3981539578594123334}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -755,7 +755,7 @@ CapsuleCollider:
   m_Height: 1.8
   m_Direction: 1
   m_Center: {x: 0, y: 0.9, z: 0}
---- !u!114 &-6017209438779392919
+--- !u!114 &3981539578594123334
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -767,15 +767,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c28d84703f12796488933c88e4338d07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  moveSpeed: 1.6
-  jumpForce: 5
-  groundCheck: {fileID: 0}
+  walkSpeed: 1.6
+  runSpeed: 3.5
   groundDistance: 0.3
   groundLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 0
   maxJumpCount: 2
-  animator: {fileID: 0}
+  jumpForce: 5
+  _animator: {fileID: 0}
 --- !u!1 &3267577869997630975
 GameObject:
   m_ObjectHideFlags: 0
