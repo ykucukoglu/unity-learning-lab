@@ -173,12 +173,9 @@ public class PlayerController : MonoBehaviour
     void UpdateAnimator()
     {
         _animator.SetBool(HashIsJumping, !isGrounded);
-        // Animasyon speed doğrudan moveSpeed üzerinden
-        float animSpeed = 0f;
-        if (moveSpeed == walkSpeed) animSpeed = 0.5f;
-        else if (moveSpeed == runSpeed) animSpeed = 1f;
-        else animSpeed = 0f;
 
+        // Animasyon hızı (0 ile 1 arasına normalize edildi)
+        float animSpeed = moveSpeed / runSpeed;
         _animator.SetFloat(HashSpeed, animSpeed, 0.1f, Time.deltaTime);
     }
 
