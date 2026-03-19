@@ -21,6 +21,13 @@ public class CameraFollow : MonoBehaviour
 
     private bool _introFinished = false;
 
+
+    [Header("Mouse Control")]
+    public bool enableMouseControl = true;
+    public float mouseSensitivity = 3f;
+    private float currentYaw = 0f;
+    private float currentPitch = 20f; // varsayılan kamera açısı
+
     public void Init(Transform player)
     {
         playerTransform = player;
@@ -32,14 +39,18 @@ public class CameraFollow : MonoBehaviour
     {
         if (!_introFinished || playerTransform == null) return;
 
-        // Kamera pozisyonu: dünya ekseninde takip
-        Vector3 targetPos = playerTransform.position + followOffset;
-        transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 4f);
+        // Mouse input
+        if (enableMouseControl)
+        {
+            currentYaw += Input.GetAxis("Mouse X") * mouseSensitivity;
+            currentPitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+            currentPitch = Mathf.Clamp(currentPitch, -30f, 60f); // yukarı-aşağı sınır
+        }
 
-        // Kamera karaktere bakıyor
-        Vector3 lookTarget = playerTransform.position + Vector3.up * 1.5f;
-        Quaternion targetRot = Quaternion.LookRotation(lookTarget - transform.position);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 4f);
+        Vector3 offset = Quaternion.Euler(currentPitch, currentYaw, 0f) * followOffset;
+        transform.position = playerTransform.position + offset;
+
+        transform.LookAt(playerTransform.position + Vector3.up * 1.5f);
     }
 
     IEnumerator DroneSequence()

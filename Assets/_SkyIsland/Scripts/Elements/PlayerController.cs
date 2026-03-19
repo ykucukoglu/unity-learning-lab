@@ -101,12 +101,27 @@ public class PlayerController : MonoBehaviour
     {
         if (_moveInput == Vector3.zero) return;
 
-        // Hareket varsa karakterin yönünü değiştir
-        Quaternion targetRotation = Quaternion.LookRotation(_moveInput);
+        // Kamera yönünü baz al
+        Vector3 camForward = Camera.main.transform.forward;
+        Vector3 camRight = Camera.main.transform.right;
+
+        camForward.y = 0f; // sadece yatay düzlem
+        camRight.y = 0f;
+        camForward.Normalize();
+        camRight.Normalize();
+
+        // Inputu kamera yönüne çevir
+        Vector3 moveDir = camForward * _moveInput.z + camRight * _moveInput.x;
+        moveDir.Normalize();
+
+        // Karakteri hareket yönüne döndür
+        Quaternion targetRotation = Quaternion.LookRotation(moveDir);
         transform.rotation = Quaternion.Slerp(transform.rotation,  // şu anki yön
                                               targetRotation,      // gitmek istediği yön
                                               Time.deltaTime * 10f // dönüş hızı
                                                                   );
+
+        _moveInput = moveDir;
     }
 
     //Player hareketlerini uygulama
