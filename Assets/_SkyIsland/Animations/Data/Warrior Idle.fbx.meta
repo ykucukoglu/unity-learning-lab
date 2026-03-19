@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 86ba7cf2f05566943ac1cae0363933a4
+guid: 031375fad7fbe564fb990e04ff642141
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -29,39 +29,7 @@ ModelImporter:
     animationWrapMode: 0
     extraExposedTransformPaths: []
     extraUserProperties: []
-    clipAnimations:
-    - serializedVersion: 16
-      name: Sad Idle
-      takeName: mixamo.com
-      internalID: 0
-      firstFrame: 0
-      lastFrame: 100
-      wrapMode: 0
-      orientationOffsetY: 0
-      level: 0
-      cycleOffset: 0
-      loop: 0
-      hasAdditiveReferencePose: 0
-      loopTime: 1
-      loopBlend: 1
-      loopBlendOrientation: 0
-      loopBlendPositionY: 1
-      loopBlendPositionXZ: 0
-      keepOriginalOrientation: 0
-      keepOriginalPositionY: 0
-      keepOriginalPositionXZ: 1
-      heightFromFeet: 0
-      mirror: 0
-      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
-      curves: []
-      events: []
-      transformMask:
-      - path: 
-        weight: 1
-      isReadable: 0
-      additiveReferencePoseFrame: 0
-      maskType: 3
-      maskSource: {instanceID: 0}
+    clipAnimations: []
     isReadable: 0
   meshes:
     lODScreenPercentages: []
