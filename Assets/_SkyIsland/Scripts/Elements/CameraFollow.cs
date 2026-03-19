@@ -32,11 +32,11 @@ public class CameraFollow : MonoBehaviour
     {
         if (!_introFinished || playerTransform == null) return;
 
-        // DYNAMIC THIRD-PERSON FOLLOW:
-        // Follows the player and rotates with them for a more engaging feel.
-        Vector3 targetPos = playerTransform.TransformPoint(followOffset);
+        // Kamera pozisyonu: dünya ekseninde takip
+        Vector3 targetPos = playerTransform.position + followOffset;
         transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 4f);
-        
+
+        // Kamera karaktere bakıyor
         Vector3 lookTarget = playerTransform.position + Vector3.up * 1.5f;
         Quaternion targetRot = Quaternion.LookRotation(lookTarget - transform.position);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 4f);
