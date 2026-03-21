@@ -1,7 +1,10 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
+    public static PlayerController Instance { get; private set; } // Global erişim noktası
+
     [Header("Movement")]
     public float walkSpeed = 1.6f;
     public float runSpeed = 3.5f;
@@ -15,6 +18,20 @@ public class PlayerController : MonoBehaviour
     [Header("Jump")]
     public int maxJumpCount = 2;
     public float jumpForce = 5f;
+    
+    [Header("Stamina")]
+    public float maxStamina = 100f;
+    public float currentStamina = 100f;
+    public float staminaRegenRate = 12f; // Biraz daha yavaş yenilensin
+    public float sprintStaminaCost = 25f; // Koşarken daha hızlı tükensin
+    public float dashStaminaCost = 30f; // Atılma biraz daha pahalı olsun
+
+    [Header("Dash")]
+    public float dashForce = 15f;
+    public float dashDuration = 0.2f;
+    public float dashCooldown = 1f;
+    private bool isDashing = false;
+    private float lastDashTime = 0f;
 
     public Animator _animator;
 
@@ -22,11 +39,26 @@ public class PlayerController : MonoBehaviour
     private PlayerState currentState;
     private int jumpCount;
     private bool isGrounded;
+    private bool isExhausted; // Yorulma durumu
+    private bool _isSprinting; // Koşma durumu takibi
     private Vector3 _moveInput;
 
     private static readonly int HashIsJumping = Animator.StringToHash("IsJumping");
     private static readonly int HashSpeed = Animator.StringToHash("Speed");
 
+
+    private void Awake()
+    {
+        // Singleton yapısı: Her yerden erişim için kendisini Instance'a ata
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject); // Eğer başka bir oyuncu varsa yenisini yok et
+        }
+    }
 
     private void Start()
     {
@@ -43,9 +75,11 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        print(moveSpeed);
         ReadInput();
-        HandleState();
+        HandleStamina();
+        ProcessMovement();
+        HandleAbilities();
+        HandleState(); // Kamera yönüne çevirme ve rotasyon
         CheckGround();
         UpdateAnimator();
     }
@@ -55,19 +89,79 @@ public class PlayerController : MonoBehaviour
         ApplyMovement();
     }
 
-    //Player hareket inputlarını okuma
-    void ReadInput()
+    private void ReadInput()
     {
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
-
         _moveInput = new Vector3(x, 0, z);
+    }
 
-        // Hız belirleme
-        if (_moveInput.magnitude > 0.1f)
-            moveSpeed = Input.GetKey(KeyCode.LeftShift) ? runSpeed : walkSpeed;
+    private void HandleStamina()
+    {
+        // Yorulma (Exhaustion) mantığı
+        if (currentStamina <= 0) isExhausted = true;
+        if (isExhausted && currentStamina >= 20f) isExhausted = false;
+
+        // Koşma (Sprint) durumu belirleme
+        _isSprinting = Input.GetKey(KeyCode.LeftShift) && _moveInput.magnitude > 0.1f && isGrounded && currentStamina > 0 && !isExhausted;
+
+        // Enerji değişimi
+        if (_isSprinting)
+        {
+            currentStamina -= sprintStaminaCost * Time.deltaTime;
+        }
+        else if (!isDashing)
+        {
+            currentStamina += staminaRegenRate * Time.deltaTime;
+        }
+
+        currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
+    }
+
+    private void ProcessMovement()
+    {
+        if (isDashing) return;
+
+        if (_isSprinting)
+        {
+            moveSpeed = runSpeed;
+            ChangeState(PlayerState.Run);
+        }
+        else if (_moveInput.magnitude > 0.1f)
+        {
+            moveSpeed = walkSpeed;
+            ChangeState(PlayerState.Walk);
+        }
         else
+        {
             moveSpeed = 0f;
+            ChangeState(PlayerState.Idle);
+        }
+    }
+
+    private void HandleAbilities()
+    {
+        // Atılma (Dash) kontrolü
+        if (Input.GetKeyDown(KeyCode.E) && Time.time >= lastDashTime + dashCooldown && currentStamina >= dashStaminaCost && !isDashing)
+        {
+            Vector3 dashDir = GetCameraRelativeDirection(_moveInput);
+            StartCoroutine(Dash(dashDir));
+        }
+    }
+
+    private Vector3 GetCameraRelativeDirection(Vector3 input)
+    {
+        if (input == Vector3.zero) return Vector3.zero;
+
+        Vector3 camForward = Camera.main.transform.forward;
+        Vector3 camRight = Camera.main.transform.right;
+
+        camForward.y = 0f;
+        camRight.y = 0f;
+        camForward.Normalize();
+        camRight.Normalize();
+
+        return (camForward * input.z + camRight * input.x).normalized;
     }
 
     //Player state değiştirme
@@ -93,7 +187,31 @@ public class PlayerController : MonoBehaviour
                 HandleJump();
                 break;
 
+            case PlayerState.Dash:
+                break;
+
         }
+    }
+
+    private IEnumerator Dash(Vector3 dashDir)
+    {
+        isDashing = true;
+        currentStamina -= dashStaminaCost;
+        lastDashTime = Time.time;
+        ChangeState(PlayerState.Dash);
+
+        // Ekranda yön girdisi yoksa (sadece E'ye basıldıysa) baktığı yöne atıl
+        if (dashDir == Vector3.zero) dashDir = transform.forward;
+
+        float startTime = Time.time;
+        while (Time.time < startTime + dashDuration)
+        {
+            _rb.linearVelocity = new Vector3(dashDir.x * dashForce, _rb.linearVelocity.y, dashDir.z * dashForce);
+            yield return null;
+        }
+
+        isDashing = false;
+        ChangeState(isGrounded ? PlayerState.Idle : PlayerState.Jump);
     }
 
     //Player hareketlerini kontrol etme
@@ -101,25 +219,15 @@ public class PlayerController : MonoBehaviour
     {
         if (_moveInput == Vector3.zero) return;
 
-        // Kamera yönünü baz al
-        Vector3 camForward = Camera.main.transform.forward;
-        Vector3 camRight = Camera.main.transform.right;
-
-        camForward.y = 0f; // sadece yatay düzlem
-        camRight.y = 0f;
-        camForward.Normalize();
-        camRight.Normalize();
-
-        // Inputu kamera yönüne çevir
-        Vector3 moveDir = camForward * _moveInput.z + camRight * _moveInput.x;
-        moveDir.Normalize();
+        // Kamera yönünü baz alarak inputu çevir
+        Vector3 moveDir = GetCameraRelativeDirection(_moveInput);
 
         // Karakteri hareket yönüne döndür
         Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-        transform.rotation = Quaternion.Slerp(transform.rotation,  // şu anki yön
-                                              targetRotation,      // gitmek istediği yön
-                                              Time.deltaTime * 10f // dönüş hızı
-                                                                  );
+        transform.rotation = Quaternion.Slerp(transform.rotation,
+                                              targetRotation,
+                                              Time.deltaTime * 10f
+                                             );
 
         _moveInput = moveDir;
     }
@@ -127,6 +235,8 @@ public class PlayerController : MonoBehaviour
     //Player hareketlerini uygulama
     void ApplyMovement()
     {
+        if (isDashing) return; // Atılma sırasında normal hareketi durdur
+
         if (_moveInput.magnitude > 0.1f)
         {
             Vector3 velocity = _moveInput.normalized * moveSpeed;

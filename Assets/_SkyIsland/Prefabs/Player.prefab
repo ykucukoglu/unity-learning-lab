@@ -772,9 +772,17 @@ MonoBehaviour:
   groundDistance: 0.3
   groundLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   maxJumpCount: 2
   jumpForce: 5
+  maxStamina: 100
+  currentStamina: 100
+  staminaRegenRate: 12
+  sprintStaminaCost: 25
+  dashStaminaCost: 30
+  dashForce: 15
+  dashDuration: 0.2
+  dashCooldown: 1
   _animator: {fileID: 0}
 --- !u!1 &3267577869997630975
 GameObject:
